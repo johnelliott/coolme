@@ -1,0 +1,26 @@
+{
+  "name": "coolme",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "node test/index.js",
+    "start": "node server.js"
+  },
+  "keywords": [
+    "node",
+    "opencv",
+    "stream",
+    "video"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "debug": "^2.2.0",
+    "ecstatic": "^1.4.0",
+    "opencv": "^5.0.0"
+  },
+  "devDependencies": {
+    "tape": "^4.5.1"
+  }
+}
