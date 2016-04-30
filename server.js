@@ -1,6 +1,7 @@
 var http = require('http');
 var fs = require('fs');
 var dup = require('./sunnies-stream.js');
+var debug = require('debug')('coolme')
 
 var staticServer = require('ecstatic')({ root: __dirname + '/public' });
 
