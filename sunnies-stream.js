@@ -1,29 +1,47 @@
+var debug = require('debug')('coolme:s-stream')
 var util = require('util')
 var stream = require('stream')
 var cv = require('opencv')
-var debug = require('debug')('coolme:s-stream')
+var addGlasses = require('./lib/add-glasses')
 
 function SunniesTransform() {
   stream.Transform.call(this, {objectMode: true})
   this.tailPromise = Promise.resolve()
 }
-
 util.inherits(SunniesTransform, stream.Transform)
 
-SunniesTransform.prototype._transform = function(buf, encoding, callback) {
+const model = 'node_modules/opencv/data/haarcascade_eye_tree_eyeglasses.xml'
+SunniesTransform.prototype._transform = function(mat, encoding, callback) {
   var self = this //sry...
   var prom = new Promise(function(resolve, reject) {
-    process(buf, function(err, image){
+    mat.detectObject(model, {}, function(err, eyepairs) {
       if (err) {
+        console.error("Error:", err)
         reject(err)
-        return self.emit('error', err)
+        throw err
       }
-      self.push(image)
-      callback()
-      resolve()
+      debug('eyepairs', eyepairs.length)
+
+      for (var i = 0; i < eyepairs.length; i++) {
+        var eyepair = eyepairs[i];
+        mat.ellipse(eyepair.x + eyepair.width / 2,
+                   eyepair.y + eyepair.height / 2,
+                   eyepair.width / 2,
+                   eyepair.height / 2);
+      }
+      addGlasses(eyepairs, mat.toBuffer(), function(err, buffer) {
+        if (err) reject(err);
+        self.push(buffer)
+        resolve()
+      })
+      //mat.save(`./${new Date()}-debug-out.jpg`) // debug
+      //self.push(mat.toBuffer())
     })
+    callback()
   })
+
   this.tailPromise = this.tailPromise.then(function() {
+    debug('prom', prom)
     return prom
   })
 }
@@ -31,36 +49,6 @@ SunniesTransform.prototype._transform = function(buf, encoding, callback) {
 SunniesTransform.prototype._flush = function(callback) {
   this.tailPromise.then(function() {
     callback()
-  })
-}
-
-// TODO rename and move out
-function process(chunk, callback) {
-  cv.readImage(chunk, function(err, im){
-    if (err) {
-      reject(err)
-      //throw err
-    }
-    debug('im', im)
-    if (im.width() < 1 || im.height() < 1) throw new Error('image has no size');
-
-    const model = 'node_modules/opencv/data/haarcascade_eye_tree_eyeglasses.xml'
-    im.detectObject(model, {}, function(err, eyepairs) {
-      if (err) {
-        console.error("Error:", err);
-        throw err;
-      }
-      debug('eyepairs', eyepairs)
-
-      for (var i = 0; i < eyepairs.length; i++) {
-        var eyepair = eyepairs[i];
-        im.ellipse(eyepair.x + eyepair.width / 2,
-                   eyepair.y + eyepair.height / 2,
-                   eyepair.width / 2,
-                   eyepair.height / 2, [0,0,0]);
-      }
-      callback(null, im.toBuffer())
-    })
   })
 }
 
