@@ -23,19 +23,34 @@ SunniesTransform.prototype._transform = function(mat, encoding, callback) {
       debug('eyepairs', eyepairs.length)
 
       for (var i = 0; i < eyepairs.length; i++) {
-        var eyepair = eyepairs[i];
+        var eyepair = eyepairs[i]
+        /*
         mat.ellipse(eyepair.x + eyepair.width / 2,
                    eyepair.y + eyepair.height / 2,
                    eyepair.width / 2,
-                   eyepair.height / 2);
+                   eyepair.height / 2)
+                   */
       }
+      if (eyepairs.length > 1) {
       addGlasses(eyepairs, mat.toBuffer(), function(err, buffer) {
         if (err) reject(err);
         self.push(buffer)
         resolve()
       })
-      //mat.save(`./${new Date()}-debug-out.jpg`) // debug
-      //self.push(mat.toBuffer())
+      mat.save(`./${new Date()}-debug-out.jpg`) // debug
+      }
+      else {
+        // just push back what you sent us with no glasses
+        // TODO better yet, pipe back req
+        // TODO better than that, just do status code for unchanged
+        var eye = eyepairs[0]
+        mat.ellipse(eye.x + eye.width / 2,
+                   eye.y + eye.height / 2,
+                   eye.width / 2,
+                   eye.height / 2)
+        self.push(mat.toBuffer())
+        resolve()
+      }
     })
     callback()
   })
